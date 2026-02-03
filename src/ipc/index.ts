@@ -1,4 +1,5 @@
 import { registerDialogHandlers } from './dialog';
+import { registerProjectHandlers } from './project';
 
 /**
  * 统一注册所有 IPC handlers
@@ -6,7 +7,5 @@ import { registerDialogHandlers } from './dialog';
  */
 export function registerAllHandlers() {
   registerDialogHandlers();
-  // 后续添加其他模块:
-  // registerFileHandlers();
-  // registerSystemHandlers();
+  registerProjectHandlers();
 }

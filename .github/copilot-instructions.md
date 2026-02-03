@@ -3,6 +3,7 @@
 ## 项目概述
 融合费曼学习法与卢曼卡片笔记法的轻量级智能笔记应用。
 - 技术栈：Electron + Vue 3 + TypeScript + Naive UI + Vite
+- 数据层：SQLite + Drizzle ORM + better-sqlite3
 - 核心理念：原子化卡片输入 → 时间线展示 → AI 只读分析（不修改原始内容）
 
 ## 架构
@@ -20,6 +21,7 @@ Renderer (src/renderer/)            ← Vue 3 应用
 - `src/main.ts` - 主进程入口，调用 `registerAllHandlers()`
 - `src/preload.ts` - 定义 `window.electronAPI` 接口
 - `src/ipc/` - IPC handlers 按模块拆分
+- `src/storage/` - 数据存储层（Drizzle ORM）
 - `src/renderer/` - Vue 渲染进程
 - `src/env.d.ts` - 全局类型定义（含 `ElectronAPI`）
 

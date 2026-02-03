@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, h } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import {
   NLayoutSider,
   NInput,
@@ -12,47 +12,31 @@ import {
 import type { MenuOption } from 'naive-ui'
 import type { Project } from '../types'
 
-// Mock 项目数据
-const mockProjects: Project[] = [
-  {
-    id: '1',
-    title: 'Vue 3 学习笔记',
-    description: '记录 Vue 3 Composition API 学习过程',
-    createdAt: new Date('2026-01-15'),
-    updatedAt: new Date('2026-02-01'),
-    summaryId: null,
-  },
-  {
-    id: '2',
-    title: 'TypeScript 进阶',
-    description: '类型体操与高级类型',
-    createdAt: new Date('2026-01-20'),
-    updatedAt: new Date('2026-01-28'),
-    summaryId: 'summary-1',
-  },
-  {
-    id: '3',
-    title: 'Electron 开发实践',
-    description: '桌面应用开发经验总结',
-    createdAt: new Date('2026-02-01'),
-    updatedAt: new Date('2026-02-03'),
-    summaryId: null,
-  },
-]
-
 // Mock 标签数据
 const mockTags = ['Vue', 'TypeScript', 'Electron', '学习', '实践', 'API', '组件']
 
 // 状态
 const collapsed = ref(false)
 const searchValue = ref('')
-const selectedProjectId = ref('1')
+const selectedProjectId = ref('')
+const projects = ref<Project[]>([])
 
-// 菜单选项
-const menuOptions: MenuOption[] = mockProjects.map((project) => ({
-  label: project.title,
-  key: project.id,
-}))
+// 加载项目列表
+onMounted(async () => {
+  projects.value = await window.electronAPI.listProjects()
+  // 默认选中第一个项目
+  if (projects.value.length > 0) {
+    selectedProjectId.value = projects.value[0].id
+  }
+})
+
+// 菜单选项（响应式计算）
+const menuOptions = computed<MenuOption[]>(() =>
+  projects.value.map((project) => ({
+    label: project.title,
+    key: project.id,
+  }))
+)
 
 // 事件处理
 const handleProjectSelect = (key: string) => {

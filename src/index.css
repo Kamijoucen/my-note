@@ -1,0 +1,54 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  /* Notion 风格字体栈 */
+  font-family:
+    ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica,
+    'Apple Color Emoji', Arial, sans-serif, 'Segoe UI Emoji', 'Segoe UI Symbol';
+  /* 基础配色 */
+  background-color: #ffffff;
+  color: #37352f;
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* 文本选中样式 */
+::selection {
+  background-color: rgba(55, 53, 47, 0.15);
+}
+
+/* 滚动条样式（Notion 风格） */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: rgba(55, 53, 47, 0.16);
+  border-radius: 20px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(55, 53, 47, 0.3);
+}
+
+#app {
+  height: 100%;
+}

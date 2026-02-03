@@ -12,7 +12,6 @@ export interface Project {
   summaryId: string | null
 }
 
-/** 原子卡片 - ⚠️ AI 禁止修改 content 字段 */
 export interface Card {
   id: string
   projectId: string

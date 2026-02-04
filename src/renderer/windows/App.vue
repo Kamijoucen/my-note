@@ -7,10 +7,24 @@
             <n-notification-provider>
                 <n-dialog-provider>
                     <n-loading-bar-provider>
-                        <MainContent
-                            :is-dark="isDark"
-                            @toggle-theme="toggleTheme"
-                        />
+                        <n-layout class="app-layout">
+                            <!-- 全局顶部导航栏 -->
+                            <n-layout-header class="global-header" bordered>
+                                <n-space justify="space-between" align="center" style="height: 100%; padding: 0 24px;">
+                                    <n-text strong style="font-size: 18px;">
+                                        📝 My Note
+                                    </n-text>
+                                    <n-space align="center">
+                                        <n-text>{{ isDark ? '🌙 暗色' : '☀️ 亮色' }}</n-text>
+                                        <n-switch :value="isDark" @update:value="toggleTheme" />
+                                    </n-space>
+                                </n-space>
+                            </n-layout-header>
+                            <!-- 下方内容区 -->
+                            <n-layout has-sider position="absolute" class="content-layout">
+                                <MainContent />
+                            </n-layout>
+                        </n-layout>
                     </n-loading-bar-provider>
                 </n-dialog-provider>
             </n-notification-provider>
@@ -26,7 +40,12 @@ import {
     NMessageProvider,
     NNotificationProvider,
     NDialogProvider,
-    NLoadingBarProvider
+    NLoadingBarProvider,
+    NLayout,
+    NLayoutHeader,
+    NSpace,
+    NText,
+    NSwitch
 } from 'naive-ui';
 import type { GlobalThemeOverrides } from 'naive-ui';
 import MainContent from './MainContent.vue';
@@ -146,5 +165,20 @@ const darkThemeOverrides: GlobalThemeOverrides = {
 body {
     margin: 0;
     padding: 0;
+}
+</style>
+
+<style scoped>
+.app-layout {
+    height: 100vh;
+}
+
+.global-header {
+    height: 56px;
+}
+
+.content-layout {
+    top: 56px;
+    bottom: 0;
 }
 </style>

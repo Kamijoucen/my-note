@@ -21,6 +21,13 @@ body {
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  /* 主题色变量 */
+  --border-color: #e3e2de;
+}
+
+/* 暗色主题边框色 */
+.n-config-provider.n-dark {
+  --border-color: #373737;
 }
 
 /* 文本选中样式 */

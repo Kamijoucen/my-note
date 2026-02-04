@@ -108,7 +108,7 @@ const formatTime = (date: Date): string => {
 }
 
 .card-item {
-  max-width: 600px;
+  max-width: 100%;
 }
 
 .card-content {

@@ -27,7 +27,7 @@ const handleKeydown = (e: KeyboardEvent) => {
         v-model:value="inputValue"
         type="textarea"
         placeholder="记录一条原子笔记... (Ctrl+Enter 发送)"
-        :autosize="{ minRows: 4, maxRows: 6 }"
+        class="full-height-input"
         @keydown="handleKeydown"
       />
       <div class="input-actions">
@@ -45,23 +45,38 @@ const handleKeydown = (e: KeyboardEvent) => {
 
 <style scoped>
 .card-input-container {
-  padding: 12px 24px;
+  padding: 24px;
   height: 100%;
-  background-color: var(--n-action-color);
+  box-sizing: border-box;
   display: flex;
-  align-items: flex-start;
+  flex-direction: column;
 }
 
 .input-wrapper {
   flex: 1;
-  max-width: 720px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 12px;
+  min-height: 0;
+}
+
+.full-height-input {
+  flex: 1;
+  min-height: 0;
+}
+
+.full-height-input :deep(.n-input-wrapper) {
+  height: 100%;
+}
+
+.full-height-input :deep(textarea) {
+  height: 100% !important;
+  resize: none;
 }
 
 .input-actions {
   display: flex;
   justify-content: flex-end;
+  flex-shrink: 0;
 }
 </style>

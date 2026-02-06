@@ -14,6 +14,7 @@ import {
 
 import type { MenuOption } from 'naive-ui'
 import type { Project } from '../types'
+import { protocol } from '../protocol'
 
 // Mock 标签数据
 const mockTags = ['Vue', 'TypeScript', 'Electron', '学习', '实践', 'API', '组件']
@@ -27,7 +28,7 @@ const showCreateProjectModal = ref(false)
 
 // 加载项目列表
 onMounted(async () => {
-    projects.value = await window.electronAPI.listProjects()
+    projects.value = await protocol.listProjects()
     // 默认选中第一个项目
     if (projects.value.length > 0) {
         selectedProjectId.value = projects.value[0].id
@@ -50,6 +51,7 @@ const handleProjectSelect = (key: string) => {
 const openCreateProjectModal = () => {
     showCreateProjectModal.value = true
 }
+
 </script>
 
 <template>

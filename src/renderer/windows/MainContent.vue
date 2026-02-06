@@ -1,9 +1,9 @@
 <template>
   <!-- 侧边栏 -->
-  <Sidebar />
+  <Sidebar v-model="sidebarCollapsed" />
 
   <!-- 主内容区：左右双栏 -->
-  <NLayout position="absolute" class="main-content">
+  <NLayout position="absolute" class="main-content" :style="{ left: sidebarCollapsed ? '64px' : '240px' }">
     <NSplit :default-size="0.45" class="content-split">
       <!-- 左栏：输入区 -->
       <template #1>
@@ -26,9 +26,12 @@
 </template>
 
 <script setup lang="ts">
+import { ref } from 'vue'
 import { NLayout, NSplit } from 'naive-ui'
 
 import Sidebar from '../components/Sidebar.vue'
+
+const sidebarCollapsed = ref(false)
 import ProjectHeader from '../components/ProjectHeader.vue'
 import CardTimeline from '../components/CardTimeline.vue'
 import CardInput from '../components/CardInput.vue'
@@ -36,9 +39,9 @@ import CardInput from '../components/CardInput.vue'
 
 <style scoped>
 .main-content {
-  left: 240px;
   right: 0;
   height: 100%;
+  transition: left 0.3s var(--n-bezier, ease-in-out);
 }
 
 .content-split {

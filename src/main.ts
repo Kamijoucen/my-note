@@ -3,6 +3,7 @@ import path from 'node:path';
 import started from 'electron-squirrel-startup';
 import { registerAllHandlers } from './ipc';
 import { initDatabase } from './storage';
+import { loadConfig } from './config';
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (started) {
@@ -37,7 +38,11 @@ const createWindow = () => {
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
 app.on('ready', () => {
-  initDatabase();
+  // 先读配置，有仓库路径则初始化数据库，否则等待用户配置后通过 IPC 初始化
+  const config = loadConfig();
+  if (config) {
+    initDatabase(path.join(config.repoPath, 'airnote.db'));
+  }
   registerAllHandlers();
   createWindow();
 });

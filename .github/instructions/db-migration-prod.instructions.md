@@ -88,3 +88,5 @@ npm start  # 应自动执行新迁移
 - 只能在数组末尾追加新迁移
 - schema.ts、migrations、types/index.ts 三处需同步修改
 - 新字段必须有默认值或允许 NULL
+- `initDatabase(dbPath)` 接收路径参数，Repo 层通过 `getDb()` 获取实例
+- 数据库路径：`<repoPath>/airnote.db`（repoPath 由 `~/.airnote/config.json` 配置）

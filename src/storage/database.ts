@@ -1,15 +1,21 @@
-import { drizzle } from 'drizzle-orm/better-sqlite3';
+import { drizzle, BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
 import Database from 'better-sqlite3';
-import { app } from 'electron';
-import path from 'node:path';
 import * as schema from './schema';
 
-// 数据库文件存放在用户数据目录
-const dbPath = path.join(app.getPath('userData'), 'my-note.db');
-const sqlite = new Database(dbPath);
+// 延迟初始化：在 initDatabase() 调用前为 null
+let sqlite: Database.Database | null = null;
+let db: BetterSQLite3Database<typeof schema> | null = null;
 
-// 创建 Drizzle 实例
-export const db = drizzle(sqlite, { schema });
+/**
+ * 获取已初始化的数据库实例
+ * 必须在 initDatabase() 之后调用，否则抛出异常
+ */
+export function getDb(): BetterSQLite3Database<typeof schema> {
+    if (!db) {
+        throw new Error('数据库尚未初始化，请先调用 initDatabase()');
+    }
+    return db;
+}
 
 /**
  * 迁移定义
@@ -53,9 +59,13 @@ const migrations: string[] = [
 
 /**
  * 初始化数据库
+ * @param dbPath 数据库文件完整路径（如 /path/to/repo/airnote.db）
  * 根据 user_version 执行增量迁移
  */
-export function initDatabase() {
+export function initDatabase(dbPath: string) {
+    sqlite = new Database(dbPath);
+    db = drizzle(sqlite, { schema });
+
     const currentVersion = sqlite.pragma('user_version', { simple: true }) as number;
 
     // 从当前版本开始，执行所有未执行的迁移
@@ -63,29 +73,4 @@ export function initDatabase() {
         sqlite.exec(migrations[i]);
         sqlite.pragma(`user_version = ${i + 1}`);
     }
-
-    // 插入测试数据
-    seedTestData();
 }
-
-/**
- * 插入测试数据（仅当数据库为空时）
- */
-function seedTestData() {
-    const count = db.select().from(schema.projects).all().length;
-    if (count === 0) {
-        const now = new Date().toISOString();
-        db.insert(schema.projects)
-            .values({
-                id: crypto.randomUUID(),
-                title: '示例项目',
-                description: '这是一个示例项目，你可以在这里记录你的学习笔记。',
-                createdAt: now,
-                updatedAt: now,
-                summaryId: null,
-            })
-            .run();
-    }
-}
-
-export default db;

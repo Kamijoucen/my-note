@@ -63,8 +63,10 @@ export interface Card {
 ```
 
 ### 4. 删除本地数据库重建
+数据库位于用户配置的仓库目录下：
 ```powershell
-Remove-Item "$env:APPDATA\my-note\my-note.db" -Force
+# 数据库路径：<repoPath>/airnote.db（repoPath 见 ~/.airnote/config.json）
+Remove-Item "<repoPath>\airnote.db" -Force
 npm start
 ```
 
@@ -72,3 +74,4 @@ npm start
 - 开发阶段可随时删库重建，不需要保留数据
 - migrations 数组只保留一个元素（最新完整 DDL）
 - schema.ts、migrations、types/index.ts 三处需同步修改
+- `initDatabase(dbPath)` 接收路径参数，Repo 层通过 `getDb()` 获取实例

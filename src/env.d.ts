@@ -15,6 +15,9 @@ declare module '*.vue' {
 export interface ElectronAPI {
   selectFile: () => Promise<string | null>;
   listProjects: () => Promise<Project[]>;
+  checkConfig: () => Promise<{ configured: boolean; repoPath?: string }>;
+  selectFolder: () => Promise<string | null>;
+  initializeRepo: (repoPath: string) => Promise<boolean>;
 }
 
 declare global {

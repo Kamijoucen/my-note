@@ -18,11 +18,13 @@ Renderer (src/renderer/)            ← Vue 3 应用
 ```
 
 ### 目录结构
-- `src/main.ts` - 主进程入口，调用 `registerAllHandlers()`
+- `src/main.ts` - 主进程入口，启动流程：读配置 → 条件初始化 DB → 注册 IPC → 创建窗口
+- `src/config.ts` - 应用配置管理（读写 `~/.airnote/config.json`）
 - `src/preload.ts` - 定义 `window.electronAPI` 接口
 - `src/ipc/` - IPC handlers 按模块拆分
-- `src/storage/` - 数据存储层（Drizzle ORM）
+- `src/storage/` - 数据存储层（Drizzle ORM，延迟初始化）
 - `src/renderer/` - Vue 渲染进程
+- `src/renderer/protocol/` - Protocol 抽象层（渲染进程访问主进程的唯一通道）
 - `src/env.d.ts` - 全局类型定义（含 `ElectronAPI`）
 
 ## 数据模型
@@ -44,15 +46,26 @@ Renderer (src/renderer/)            ← Vue 3 应用
 
 ## IPC 通信模式
 
-### 添加新功能（三步）
+### 添加新功能（五步）
 1. `src/ipc/xxx.ts` - 创建 handler：`ipcMain.handle('module:action', ...)`
 2. `src/ipc/index.ts` - 注册到 `registerAllHandlers()`
-3. `src/preload.ts` + `src/env.d.ts` - 暴露接口并更新类型
+3. `src/preload.ts` + `src/env.d.ts` - 暴露接口并更新 `ElectronAPI` 类型
+4. `src/renderer/protocol/types.ts` - 在 `Protocol` 接口中声明方法
+5. `src/renderer/protocol/electronProtocol.ts` - 在 `ElectronProtocol` 中实现，委托给 `window.electronAPI`
 
 ### Channel 命名
-格式：`模块:动作`，如 `card:create`、`project:list`、`summary:generate`
+格式：`模块:动作`，如 `card:create`、`project:list`、`config:check`
 
 ## 界面布局
+
+### App.vue 条件渲染（无 vue-router）
+```
+isConfigured === null  → 加载中（NSpin）
+isConfigured === false → <InitConfig />（全屏，隐藏导航栏）
+isConfigured === true  → 导航栏 + <MainContent />
+```
+
+### MainContent 布局
 ```
 ┌─────────────────────────────────────────────────────────┐
 │ NLayout (has-sider, height: 100vh)                      │
@@ -71,6 +84,31 @@ Renderer (src/renderer/)            ← Vue 3 应用
 - 使用 Naive UI 绝对定位模式实现固定头尾、中间滚动
 - 侧边栏固定宽度 240px，可折叠
 
+## 启动流程
+```
+app.on('ready')
+  → loadConfig()（读 ~/.airnote/config.json）
+  → 有 repoPath → initDatabase(repoPath/airnote.db) → registerAllHandlers → createWindow
+  → 无 repoPath → registerAllHandlers → createWindow
+      → 渲染进程 App.vue 检测 configured=false → 显示 InitConfig 全屏页
+      → 用户选目录 → config:initialize → saveConfig + initDatabase → 切换 MainContent
+```
+
+## 配置管理
+- 配置文件：`~/.airnote/config.json`（`app.getPath('home')/.airnote/`）
+- 结构：`{ repoPath: string }`
+- 数据库文件：`<repoPath>/airnote.db`
+- 读写模块：`src/config.ts`（`loadConfig()` / `saveConfig()`）
+
+## Protocol 抽象层
+渲染进程通过 `src/renderer/protocol/` 的 Protocol 接口访问主进程能力。
+- **禁止**在 `.vue` 组件中直接使用 `window.electronAPI`
+- 接口定义：`src/renderer/protocol/types.ts`（`Protocol` 接口）
+- Electron 实现：`src/renderer/protocol/electronProtocol.ts`（唯一允许引用 `window.electronAPI` 的文件）
+- 全局单例：`src/renderer/protocol/index.ts` 导出 `protocol`
+- 组件中统一通过 `import { protocol } from '../protocol'` 调用
+- 迁移 Web 时只需新增实现类，业务代码无需改动
+
 ## 设计语言
 - 视觉风格模仿 Notion：黑白灰主色调，简洁克制
 - 在 `App.vue` 中通过 `themeOverrides` 配置亮色/暗色主题
@@ -84,6 +122,12 @@ npm run lint   # ESLint 检查
 ```
 
 ## 存储层架构
+
+### 数据库延迟初始化
+- `src/storage/database.ts` 中 `db` 为延迟初始化变量，不在模块加载时创建
+- `initDatabase(dbPath: string)` 接收完整数据库路径，创建实例并执行迁移
+- 通过 `getDb()` 获取已初始化的 db 实例（未初始化时抛异常）
+- Repo 层（如 `projectRepo.ts`）使用 `getDb()` 而非直接引用 `db`
 
 ### 存储适配器模式
 定义统一接口协议，支持本地/云端双模式切换：
@@ -127,7 +171,7 @@ interface StorageAdapter {
 
 ### 配置
 - 使用云端 LLM API（OpenAI / Claude / 其他兼容接口）
-- API Key 存储在用户配置中（通过 electron-store 加密存储）
+- API Key 存储在用户配置中（通过 `~/.airnote/config.json` 存储）
 - 支持自定义 API Base URL（兼容私有部署）
 
 ### 调用规范

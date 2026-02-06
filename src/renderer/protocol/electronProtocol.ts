@@ -15,4 +15,31 @@ export class ElectronProtocol implements Protocol {
   async listProjects(): Promise<Project[]> {
     return window.electronAPI.listProjects()
   }
+
+  async createProject(title: string, description: string): Promise<Project> {
+    // return window.electronAPI.createProject({ title, description })
+    return new Promise((resolve) => {
+        const now = new Date()
+        return resolve({
+            id: '123',
+            title,
+            description,
+            createdAt: now,
+            updatedAt: now,
+            summaryId: '',
+        })
+    })
+  }
+
+  async checkConfig(): Promise<{ configured: boolean; repoPath?: string }> {
+    return window.electronAPI.checkConfig()
+  }
+
+  async selectFolder(): Promise<string | null> {
+    return window.electronAPI.selectFolder()
+  }
+
+  async initializeRepo(repoPath: string): Promise<boolean> {
+    return window.electronAPI.initializeRepo(repoPath)
+  }
 }

@@ -1,4 +1,4 @@
-import { db } from './database';
+import { getDb } from './database';
 import { projects } from './schema';
 import { eq } from 'drizzle-orm';
 import type { Project } from '../renderer/types';
@@ -7,7 +7,7 @@ import type { Project } from '../renderer/types';
  * 获取所有项目列表
  */
 export function listProjects(): Project[] {
-    const rows = db.select().from(projects).all();
+    const rows = getDb().select().from(projects).all();
     return rows.map((row) => ({
         id: row.id,
         title: row.title,
@@ -22,7 +22,7 @@ export function listProjects(): Project[] {
  * 根据 ID 获取项目
  */
 export function getProject(id: string): Project | null {
-    const row = db.select().from(projects).where(eq(projects.id, id)).get();
+    const row = getDb().select().from(projects).where(eq(projects.id, id)).get();
     if (!row) return null;
     return {
         id: row.id,
@@ -40,7 +40,7 @@ export function getProject(id: string): Project | null {
 export function createProject(data: Omit<Project, 'id'>): Project {
     const id = crypto.randomUUID();
     const now = new Date();
-    db.insert(projects)
+    getDb().insert(projects)
         .values({
             id,
             title: data.title,
@@ -71,7 +71,7 @@ export function updateProject(id: string, data: Partial<Omit<Project, 'id'>>): P
     if (data.summaryId !== undefined) updateData.summaryId = data.summaryId ?? '';
     updateData.updatedAt = new Date().toISOString();
 
-    db.update(projects).set(updateData).where(eq(projects.id, id)).run();
+    getDb().update(projects).set(updateData).where(eq(projects.id, id)).run();
 
     return getProject(id);
 }
@@ -80,6 +80,6 @@ export function updateProject(id: string, data: Partial<Omit<Project, 'id'>>): P
  * 删除项目
  */
 export function deleteProject(id: string): boolean {
-    const result = db.delete(projects).where(eq(projects.id, id)).run();
+    const result = getDb().delete(projects).where(eq(projects.id, id)).run();
     return result.changes > 0;
 }

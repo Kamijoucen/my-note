@@ -7,7 +7,10 @@
             <n-notification-provider>
                 <n-dialog-provider>
                     <n-loading-bar-provider>
-                        <n-layout class="app-layout">
+                        <!-- 未配置仓库：全屏初始化页 -->
+                        <InitConfig v-if="isConfigured === false" @initialized="onInitialized" />
+                        <!-- 已配置：正常布局 -->
+                        <n-layout v-else-if="isConfigured === true" class="app-layout">
                             <!-- 全局顶部导航栏 -->
                             <n-layout-header class="global-header" bordered>
                                 <n-space justify="space-between" align="center" style="height: 100%; padding: 0 24px;">
@@ -25,6 +28,10 @@
                                 <MainContent />
                             </n-layout>
                         </n-layout>
+                        <!-- 加载中 -->
+                        <div v-else class="loading-container">
+                            <n-spin size="large" />
+                        </div>
                     </n-loading-bar-provider>
                 </n-dialog-provider>
             </n-notification-provider>
@@ -33,7 +40,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
 import {
     darkTheme,
     NConfigProvider,
@@ -45,16 +52,30 @@ import {
     NLayoutHeader,
     NSpace,
     NText,
-    NSwitch
+    NSwitch,
+    NSpin
 } from 'naive-ui';
 import type { GlobalThemeOverrides } from 'naive-ui';
 import MainContent from './MainContent.vue';
+import InitConfig from './InitConfig.vue';
+import { protocol } from '../protocol';
 
+// null = 加载中, false = 未配置, true = 已配置
+const isConfigured = ref<boolean | null>(null);
 const isDark = ref(false);
 
 const toggleTheme = () => {
     isDark.value = !isDark.value;
 };
+
+function onInitialized() {
+    isConfigured.value = true;
+}
+
+onMounted(async () => {
+    const result = await protocol.checkConfig();
+    isConfigured.value = result.configured;
+});
 
 // Notion 亮色主题配色
 const lightThemeOverrides: GlobalThemeOverrides = {
@@ -180,5 +201,12 @@ body {
 .content-layout {
     top: 56px;
     bottom: 0;
+}
+
+.loading-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
 }
 </style>

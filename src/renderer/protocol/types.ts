@@ -10,6 +10,7 @@ export interface Protocol {
   selectFile(): Promise<string | null>
   listProjects(): Promise<Project[]>
   createProject(title: string, description: string): Promise<Project>
+  deleteProject(id: string): Promise<boolean>
   checkConfig(): Promise<{ configured: boolean; repoPath?: string }>
   selectFolder(): Promise<string | null>
   initializeRepo(repoPath: string): Promise<boolean>

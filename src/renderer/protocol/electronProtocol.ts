@@ -17,18 +17,11 @@ export class ElectronProtocol implements Protocol {
   }
 
   async createProject(title: string, description: string): Promise<Project> {
-    // return window.electronAPI.createProject({ title, description })
-    return new Promise((resolve) => {
-        const now = new Date()
-        return resolve({
-            id: '123',
-            title,
-            description,
-            createdAt: now,
-            updatedAt: now,
-            summaryId: '',
-        })
-    })
+    return window.electronAPI.createProject({ title, description })
+  }
+
+  async deleteProject(id: string): Promise<boolean> {
+    return window.electronAPI.deleteProject(id)
   }
 
   async checkConfig(): Promise<{ configured: boolean; repoPath?: string }> {

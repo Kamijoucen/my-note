@@ -3,16 +3,15 @@ import { ref, computed, onMounted } from 'vue'
 import {
     NLayoutSider,
     NInput,
-    NMenu,
     NSpace,
     NTag,
     NDivider,
     NText,
     NButton,
     NModal,
+    NIcon,
+    useDialog,
 } from 'naive-ui'
-
-import type { MenuOption } from 'naive-ui'
 import type { Project } from '../types'
 import { protocol } from '../protocol'
 
@@ -23,6 +22,8 @@ const mockTags = ['Vue', 'TypeScript', 'Electron', '学习', '实践', 'API', '�
 const props = defineProps<{ modelValue?: boolean }>()
 const emit = defineEmits<{ 'update:modelValue': [value: boolean] }>()
 const collapsed = computed(() => props.modelValue ?? false)
+
+const dialog = useDialog()
 
 // 状态
 const searchValue = ref('')
@@ -46,17 +47,29 @@ onMounted(async () => {
     }
 })
 
-// 菜单选项（响应式计算）
-const menuOptions = computed<MenuOption[]>(() =>
-    projects.value.map((project) => ({
-        label: project.title,
-        key: project.id,
-    }))
-)
-
 // 事件处理
-const handleProjectSelect = (key: string) => {
-    selectedProjectId.value = key
+const handleProjectSelect = (id: string) => {
+    selectedProjectId.value = id
+}
+
+// 删除项目确认
+const confirmDeleteProject = (project: Project) => {
+    dialog.warning({
+        title: '删除项目',
+        content: `确定要删除项目「${project.title}」吗？此操作不可撤销。`,
+        positiveText: '删除',
+        negativeText: '取消',
+        onPositiveClick: async () => {
+            const success = await protocol.deleteProject(project.id)
+            if (success) {
+                projects.value = projects.value.filter((p) => p.id !== project.id)
+                // 如果删除的是当前选中项目，切换到第一个
+                if (selectedProjectId.value === project.id) {
+                    selectedProjectId.value = projects.value.length > 0 ? projects.value[0].id : ''
+                }
+            }
+        },
+    })
 }
 
 const openCreateProjectModal = () => {
@@ -88,8 +101,8 @@ const createProject = async (title: string, description: string) => {
         @collapse="emit('update:modelValue', true)" @expand="emit('update:modelValue', false)">
         <div class="sidebar-content">
             <!-- 搜索框 -->
-            <div v-if="!collapsed" class="create-project-button">
-                <NInput v-model:value="searchValue" placeholder="搜索笔记..." clearable>
+            <div v-if="!collapsed" class="sidebar-item">
+                <NInput v-model:value="searchValue" placeholder="搜索笔记..." clearable size="small">
                     <template #prefix>
                         <span>🔍</span>
                     </template>
@@ -97,17 +110,30 @@ const createProject = async (title: string, description: string) => {
             </div>
 
             <!-- 新建项目 -->
-            <div v-if="!collapsed" class="sidebar-search">
-                <NButton class="create-project-button" type="primary" block @click="openCreateProjectModal">
+            <div v-if="!collapsed" class="sidebar-item">
+                <NButton type="primary" block size="small" @click="openCreateProjectModal">
                     新建项目
                 </NButton>
             </div>
 
+            <NDivider v-if="!collapsed" style="margin: 4px 0" />
+
             <!-- 项目列表 -->
-            <div class="sidebar-section">
-                <NText v-if="!collapsed" depth="3" class="section-title">项目列表</NText>
-                <NMenu :value="selectedProjectId" :options="menuOptions" :collapsed="collapsed" :collapsed-width="64"
-                    :collapsed-icon-size="22" @update:value="handleProjectSelect" />
+            <div class="project-list">
+                <div
+                    v-for="project in projects"
+                    :key="project.id"
+                    class="project-item"
+                    :class="{ 'project-item--active': selectedProjectId === project.id }"
+                    @click="handleProjectSelect(project.id)"
+                >
+                    <span class="project-item-title">{{ project.title }}</span>
+                    <NIcon class="project-item-delete" :size="14" @click.stop="confirmDeleteProject(project)">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="currentColor">
+                            <path d="M400 145.49L366.51 112 256 222.51 145.49 112 112 145.49 222.51 256 112 366.51 145.49 400 256 289.49 366.51 400 400 366.51 289.49 256 400 145.49z" />
+                        </svg>
+                    </NIcon>
+                </div>
             </div>
 
             <!-- 标签云 -->
@@ -148,21 +174,12 @@ const createProject = async (title: string, description: string) => {
     display: flex;
     flex-direction: column;
     height: 100%;
-    padding: 12px 0;
+    padding: 8px 0;
 }
 
-.sidebar-search {
-    padding: 0 16px;
-    margin-bottom: 12px;
-}
-
-.sidebar-section {
-    padding: 0 8px;
-}
-
-.create-project-button {
-    padding: 0 16px;
-    margin-bottom: 12px;
+.sidebar-item {
+    padding: 0 12px;
+    margin-bottom: 6px;
 }
 
 .section-title {
@@ -173,5 +190,61 @@ const createProject = async (title: string, description: string) => {
 
 .tag-cloud {
     padding: 8px;
+}
+
+/* 项目列表 */
+.project-list {
+    padding: 0 12px;
+}
+
+.project-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 8px;
+    height: 28px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 13px;
+    margin-top: 2px;
+    transition: background-color 0.2s;
+}
+
+.project-item:hover {
+    background-color: rgba(0, 0, 0, 0.04);
+}
+
+.project-item--active {
+    background-color: rgba(24, 160, 88, 0.1);
+    color: rgb(24, 160, 88);
+}
+
+.project-item--active:hover {
+    background-color: rgba(24, 160, 88, 0.15);
+}
+
+.project-item-title {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex: 1;
+    min-width: 0;
+}
+
+.project-item-delete {
+    flex-shrink: 0;
+    margin-left: 4px;
+    padding: 2px;
+    color: #999;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.project-item-delete:hover {
+    color: #e06c75;
+}
+
+.sidebar-section {
+    padding: 0 4px;
 }
 </style>

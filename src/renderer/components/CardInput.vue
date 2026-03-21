@@ -1,14 +1,26 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { NInput, NButton, NSpace } from 'naive-ui'
+import { protocol } from '../protocol'
+
+const props = defineProps<{ projectId: string }>()
+const emit = defineEmits<{ 'card-created': [] }>()
 
 const inputValue = ref('')
+const sending = ref(false)
 
-const handleSend = () => {
-  if (!inputValue.value.trim()) return
-  // TODO: 实现发送逻辑
-  console.log('发送卡片:', inputValue.value)
-  inputValue.value = ''
+const handleSend = async () => {
+  if (!inputValue.value.trim() || !props.projectId) return
+  sending.value = true
+  try {
+    await protocol.createCard(props.projectId, inputValue.value.trim())
+    inputValue.value = ''
+    emit('card-created')
+  } catch (e) {
+    console.error('创建卡片失败:', e)
+  } finally {
+    sending.value = false
+  }
 }
 
 const handleKeydown = (e: KeyboardEvent) => {
@@ -28,12 +40,14 @@ const handleKeydown = (e: KeyboardEvent) => {
         type="textarea"
         placeholder="记录一条原子笔记... (Ctrl+Enter 发送)"
         class="full-height-input"
+        :disabled="!projectId || sending"
         @keydown="handleKeydown"
       />
       <div class="input-actions">
         <NButton
           type="primary"
-          :disabled="!inputValue.trim()"
+          :disabled="!inputValue.trim() || !projectId"
+          :loading="sending"
           @click="handleSend"
         >
           发送

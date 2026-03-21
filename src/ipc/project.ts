@@ -13,9 +13,6 @@ export function registerProjectHandlers() {
         return projectRepo.createProject({
             title: data.title,
             description: data.description,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-            summaryId: null,
         });
     });
 

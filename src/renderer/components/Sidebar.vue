@@ -19,8 +19,8 @@ import { protocol } from '../protocol'
 const mockTags = ['Vue', 'TypeScript', 'Electron', '学习', '实践', 'API', '组件']
 
 // 折叠状态由父组件通过 v-model 控制
-const props = defineProps<{ modelValue?: boolean }>()
-const emit = defineEmits<{ 'update:modelValue': [value: boolean] }>()
+const props = defineProps<{ modelValue?: boolean; selectedProjectId?: string }>()
+const emit = defineEmits<{ 'update:modelValue': [value: boolean]; 'update:selectedProjectId': [value: string] }>()
 const collapsed = computed(() => props.modelValue ?? false)
 
 const dialog = useDialog()
@@ -44,12 +44,14 @@ onMounted(async () => {
     // 默认选中第一个项目
     if (projects.value.length > 0) {
         selectedProjectId.value = projects.value[0].id
+        emit('update:selectedProjectId', projects.value[0].id)
     }
 })
 
 // 事件处理
 const handleProjectSelect = (id: string) => {
     selectedProjectId.value = id
+    emit('update:selectedProjectId', id)
 }
 
 // 删除项目确认
@@ -83,6 +85,8 @@ const createProject = async (title: string, description: string) => {
         creating.value = true
         const newProject = await protocol.createProject(title.trim(), description.trim())
         projects.value.push(newProject)
+        selectedProjectId.value = newProject.id
+        emit('update:selectedProjectId', newProject.id)
         showCreateProjectModal.value = false
         newProjectTitle.value = ''
         newProjectDescription.value = ''

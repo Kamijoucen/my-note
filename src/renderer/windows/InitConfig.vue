@@ -3,21 +3,16 @@
         <div class="init-card">
             <div class="init-icon">📝</div>
             <h1 class="init-title">欢迎使用 AirNote</h1>
-            <p class="init-desc">选择一个文件夹作为你的笔记仓库，所有数据将存储在该目录中。</p>
+            <p class="init-desc">输入 Forma 服务地址和认证 Token 以连接云端存储。</p>
 
-            <div v-if="selectedPath" class="path-display">
-                <n-text depth="3" style="font-size: 13px;">已选择路径</n-text>
-                <n-text code style="word-break: break-all;">{{ selectedPath }}</n-text>
-            </div>
-
-            <n-space vertical :size="12" style="width: 100%;">
-                <n-button block :type="selectedPath ? 'default' : 'primary'" size="large" @click="handleSelectFolder"
-                    :disabled="initializing">
-                    {{ selectedPath ? '重新选择' : '选择文件夹' }}
-                </n-button>
-                <n-button v-if="selectedPath" block type="primary" size="large" :loading="initializing"
-                    @click="handleInitialize">
-                    开始使用
+            <n-space vertical :size="16" style="width: 100%;">
+                <n-input v-model:value="baseUrl" placeholder="Forma 服务地址，如 http://localhost:8888/api"
+                    size="large" :disabled="initializing" />
+                <n-input v-model:value="token" type="password" show-password-on="click"
+                    placeholder="认证 Token" size="large" :disabled="initializing" />
+                <n-button block type="primary" size="large" :loading="initializing"
+                    :disabled="!canInitialize" @click="handleInitialize">
+                    连接并初始化
                 </n-button>
             </n-space>
 
@@ -29,36 +24,31 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
-import { NButton, NSpace, NText } from 'naive-ui';
+import { ref, computed } from 'vue';
+import { NButton, NSpace, NText, NInput } from 'naive-ui';
 import { protocol } from '../protocol';
 
 const emit = defineEmits<{
     (e: 'initialized'): void;
 }>();
 
-const selectedPath = ref<string | null>(null);
+const baseUrl = ref('');
+const token = ref('');
 const initializing = ref(false);
 const errorMsg = ref('');
 
-async function handleSelectFolder() {
-    errorMsg.value = '';
-    const path = await protocol.selectFolder();
-    if (path) {
-        selectedPath.value = path;
-    }
-}
+const canInitialize = computed(() => baseUrl.value.trim() !== '' && token.value.trim() !== '');
 
 async function handleInitialize() {
-    if (!selectedPath.value) return;
+    if (!canInitialize.value) return;
     initializing.value = true;
     errorMsg.value = '';
     try {
-        const success = await protocol.initializeRepo(selectedPath.value);
+        const success = await protocol.initializeForma(baseUrl.value.trim(), token.value.trim());
         if (success) {
             emit('initialized');
         } else {
-            errorMsg.value = '初始化失败，请检查目录权限后重试。';
+            errorMsg.value = '连接失败，请检查服务地址和 Token 是否正确。';
         }
     } catch (e) {
         errorMsg.value = '初始化失败：' + (e instanceof Error ? e.message : String(e));

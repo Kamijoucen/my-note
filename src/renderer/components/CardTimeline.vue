@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { ref, watch } from 'vue'
 import {
   NTimeline,
   NTimelineItem,
@@ -7,76 +7,72 @@ import {
   NText,
   NSpace,
   NTag,
+  NSpin,
 } from 'naive-ui'
 import type { Card } from '../types'
+import { protocol } from '../protocol'
 
-// Mock 卡片数据（已按时间倒序排列）
-const mockCards: Card[] = [
-  {
-    id: 'card-5',
-    projectId: '1',
-    content: 'watchEffect 会自动收集依赖，而 watch 需要显式指定监听源。watchEffect 适合副作用逻辑，watch 适合需要访问新旧值的场景。',
-    createdAt: new Date('2026-02-03T14:30:00'),
-    tags: ['Vue', 'watchEffect'],
-    links: ['card-3'],
-  },
-  {
-    id: 'card-4',
-    projectId: '1',
-    content: 'computed 返回的是一个 ref，访问时需要 .value（在模板中自动解包）。它具有缓存特性，只有依赖变化时才会重新计算。',
-    createdAt: new Date('2026-02-02T10:15:00'),
-    tags: ['Vue', 'computed'],
-    links: [],
-  },
-  {
-    id: 'card-3',
-    projectId: '1',
-    content: 'ref 用于基本类型，reactive 用于对象。reactive 解构会丢失响应性，需要用 toRefs 转换。',
-    createdAt: new Date('2026-02-01T16:45:00'),
-    tags: ['Vue', 'ref', 'reactive'],
-    links: [],
-  },
-  {
-    id: 'card-2',
-    projectId: '1',
-    content: 'Composition API 的核心优势是逻辑复用。可以将相关的状态和方法封装到 composable 函数中，比 mixins 更清晰。',
-    createdAt: new Date('2026-01-28T09:20:00'),
-    tags: ['Vue', 'Composition API'],
-    links: [],
-  },
-  {
-    id: 'card-1',
-    projectId: '1',
-    content: 'Vue 3 的 setup() 函数是 Composition API 的入口点。<script setup> 是更简洁的语法糖，自动暴露顶层变量给模板。',
-    createdAt: new Date('2026-01-15T11:00:00'),
-    tags: ['Vue', 'setup'],
-    links: [],
-  },
-]
+const props = defineProps<{ projectId: string }>()
+
+const cards = ref<Card[]>([])
+const loading = ref(false)
+
+async function loadCards() {
+  if (!props.projectId) {
+    cards.value = []
+    return
+  }
+  loading.value = true
+  try {
+    const list = await protocol.listCards(props.projectId)
+    // 按时间倒序
+    list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    cards.value = list
+  } catch (e) {
+    console.error('加载卡片失败:', e)
+    cards.value = []
+  } finally {
+    loading.value = false
+  }
+}
+
+// 监听项目切换，重新加载
+watch(() => props.projectId, loadCards, { immediate: true })
+
+// 暴露刷新方法供父组件调用
+function refresh() {
+  loadCards()
+}
+defineExpose({ refresh })
 
 // 格式化时间
 const formatTime = (date: Date): string => {
+  const d = date instanceof Date ? date : new Date(date)
   const now = new Date()
-  const diff = now.getTime() - date.getTime()
+  const diff = now.getTime() - d.getTime()
   const days = Math.floor(diff / (1000 * 60 * 60 * 24))
 
   if (days === 0) {
-    return `今天 ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`
+    return `今天 ${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`
   } else if (days === 1) {
-    return `昨天 ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`
+    return `昨天 ${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`
   } else if (days < 7) {
     return `${days} 天前`
   } else {
-    return `${date.getMonth() + 1}/${date.getDate()}`
+    return `${d.getMonth() + 1}/${d.getDate()}`
   }
 }
 </script>
 
 <template>
   <div class="timeline-container">
-    <NTimeline>
+    <NSpin v-if="loading" size="medium" style="margin: 40px auto; display: block;" />
+    <NText v-else-if="cards.length === 0" depth="3" style="display: block; text-align: center; margin-top: 40px;">
+      {{ projectId ? '暂无卡片，开始记录吧' : '请先选择一个项目' }}
+    </NText>
+    <NTimeline v-else>
       <NTimelineItem
-        v-for="card in mockCards"
+        v-for="card in cards"
         :key="card.id"
         :time="formatTime(card.createdAt)"
         type="info"

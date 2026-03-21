@@ -1,6 +1,6 @@
 /// <reference types="vite/client" />
 
-import type { Project } from './renderer/types';
+import type { Project, Card, Summary } from './renderer/types';
 
 declare module '*.vue' {
   import type { DefineComponent } from 'vue';
@@ -17,9 +17,14 @@ export interface ElectronAPI {
   listProjects: () => Promise<Project[]>;
   createProject: (data: { title: string; description: string }) => Promise<Project>;
   deleteProject: (id: string) => Promise<boolean>;
-  checkConfig: () => Promise<{ configured: boolean; repoPath?: string }>;
-  selectFolder: () => Promise<string | null>;
-  initializeRepo: (repoPath: string) => Promise<boolean>;
+  checkConfig: () => Promise<{ configured: boolean; baseUrl?: string }>;
+  initializeForma: (baseUrl: string, token: string) => Promise<boolean>;
+  listCards: (projectId: string) => Promise<Card[]>;
+  createCard: (data: { projectId: string; content: string; tags?: string[]; links?: string[] }) => Promise<Card>;
+  updateCard: (id: string, data: { content?: string; tags?: string[]; links?: string[] }) => Promise<Card | null>;
+  deleteCard: (id: string) => Promise<boolean>;
+  getSummary: (projectId: string) => Promise<Summary | null>;
+  saveSummary: (data: { projectId: string; content: string; sourceCards: string[]; isArchived: boolean }) => Promise<Summary>;
 }
 
 declare global {

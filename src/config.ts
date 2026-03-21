@@ -3,7 +3,8 @@ import path from 'node:path';
 import fs from 'node:fs';
 
 export interface AppConfig {
-    repoPath: string;
+    formaBaseUrl: string;
+    formaToken: string;
 }
 
 // 配置文件路径：~/.airnote/config.json
@@ -20,7 +21,8 @@ export function loadConfig(): AppConfig | null {
         const raw = fs.readFileSync(configPath, 'utf-8');
         const config = JSON.parse(raw) as AppConfig;
         // 校验必要字段
-        if (!config.repoPath || typeof config.repoPath !== 'string') return null;
+        if (!config.formaBaseUrl || typeof config.formaBaseUrl !== 'string') return null;
+        if (!config.formaToken || typeof config.formaToken !== 'string') return null;
         return config;
     } catch {
         return null;

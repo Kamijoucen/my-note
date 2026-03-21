@@ -1,5 +1,5 @@
 import type { Protocol } from './types'
-import type { Project } from '../types'
+import type { Project, Card, Summary } from '../types'
 
 /**
  * Electron 环境下的 Protocol 实现
@@ -24,15 +24,35 @@ export class ElectronProtocol implements Protocol {
     return window.electronAPI.deleteProject(id)
   }
 
-  async checkConfig(): Promise<{ configured: boolean; repoPath?: string }> {
+  async checkConfig(): Promise<{ configured: boolean; baseUrl?: string }> {
     return window.electronAPI.checkConfig()
   }
 
-  async selectFolder(): Promise<string | null> {
-    return window.electronAPI.selectFolder()
+  async initializeForma(baseUrl: string, token: string): Promise<boolean> {
+    return window.electronAPI.initializeForma(baseUrl, token)
   }
 
-  async initializeRepo(repoPath: string): Promise<boolean> {
-    return window.electronAPI.initializeRepo(repoPath)
+  async listCards(projectId: string): Promise<Card[]> {
+    return window.electronAPI.listCards(projectId)
+  }
+
+  async createCard(projectId: string, content: string, tags?: string[], links?: string[]): Promise<Card> {
+    return window.electronAPI.createCard({ projectId, content, tags, links })
+  }
+
+  async updateCard(id: string, data: { content?: string; tags?: string[]; links?: string[] }): Promise<Card | null> {
+    return window.electronAPI.updateCard(id, data)
+  }
+
+  async deleteCard(id: string): Promise<boolean> {
+    return window.electronAPI.deleteCard(id)
+  }
+
+  async getSummary(projectId: string): Promise<Summary | null> {
+    return window.electronAPI.getSummary(projectId)
+  }
+
+  async saveSummary(data: { projectId: string; content: string; sourceCards: string[]; isArchived: boolean }): Promise<Summary> {
+    return window.electronAPI.saveSummary(data)
   }
 }

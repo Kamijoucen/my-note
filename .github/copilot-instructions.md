@@ -3,7 +3,7 @@
 ## 项目概述
 融合费曼学习法与卢曼卡片笔记法的轻量级智能笔记应用。
 - 技术栈：Electron + Vue 3 + TypeScript + Naive UI + Vite
-- 数据层：SQLite + Drizzle ORM + better-sqlite3
+- 数据层：Forma 云端存储（REST API）
 - 核心理念：原子化卡片输入 → 时间线展示 → AI 只读分析（不修改原始内容）
 
 ## 架构
@@ -18,11 +18,11 @@ Renderer (src/renderer/)            ← Vue 3 应用
 ```
 
 ### 目录结构
-- `src/main.ts` - 主进程入口，启动流程：读配置 → 条件初始化 DB → 注册 IPC → 创建窗口
-- `src/config.ts` - 应用配置管理（读写 `~/.airnote/config.json`）
+- `src/main.ts` - 主进程入口，启动流程：读配置 → 条件初始化 FormaClient → 注册 IPC → 创建窗口
+- `src/config.ts` - 应用配置管理（读写 `~/.airnote/config.json`，存储 Forma 连接信息）
 - `src/preload.ts` - 定义 `window.electronAPI` 接口
 - `src/ipc/` - IPC handlers 按模块拆分
-- `src/storage/` - 数据存储层（Drizzle ORM，延迟初始化）
+- `src/storage/` - 数据存储层（Forma HTTP 客户端 + Repo 层，延迟初始化）
 - `src/renderer/` - Vue 渲染进程
 - `src/renderer/protocol/` - Protocol 抽象层（渲染进程访问主进程的唯一通道）
 - `src/env.d.ts` - 全局类型定义（含 `ElectronAPI`）
@@ -88,16 +88,15 @@ isConfigured === true  → 导航栏 + <MainContent />
 ```
 app.on('ready')
   → loadConfig()（读 ~/.airnote/config.json）
-  → 有 repoPath → initDatabase(repoPath/airnote.db) → registerAllHandlers → createWindow
-  → 无 repoPath → registerAllHandlers → createWindow
+  → 有 formaBaseUrl/formaToken → initFormaClient(baseUrl, token) → registerAllHandlers → createWindow
+  → 无配置 → registerAllHandlers → createWindow
       → 渲染进程 App.vue 检测 configured=false → 显示 InitConfig 全屏页
-      → 用户选目录 → config:initialize → saveConfig + initDatabase → 切换 MainContent
+      → 用户输入 Forma 地址和 Token → config:initialize → 验证连接 + 创建 Schema + saveConfig → 切换 MainContent
 ```
 
 ## 配置管理
 - 配置文件：`~/.airnote/config.json`（`app.getPath('home')/.airnote/`）
-- 结构：`{ repoPath: string }`
-- 数据库文件：`<repoPath>/airnote.db`
+- 结构：`{ formaBaseUrl: string, formaToken: string }`
 - 读写模块：`src/config.ts`（`loadConfig()` / `saveConfig()`）
 
 ## Protocol 抽象层
@@ -123,49 +122,32 @@ npm run lint   # ESLint 检查
 
 ## 存储层架构
 
-### 数据库延迟初始化
-- `src/storage/database.ts` 中 `db` 为延迟初始化变量，不在模块加载时创建
-- `initDatabase(dbPath: string)` 接收完整数据库路径，创建实例并执行迁移
-- 通过 `getDb()` 获取已初始化的 db 实例（未初始化时抛异常）
-- Repo 层（如 `projectRepo.ts`）使用 `getDb()` 而非直接引用 `db`
+### Forma 云端存储
+- App code：`airnote`（硬编码）
+- Forma API 说明：`AI_INTEGRATION_PROMPT.md`
+- HTTP 客户端：`src/storage/formaClient.ts`（延迟初始化单例 `initFormaClient()` / `getFormaClient()`）
+- Repo 层：`projectRepo.ts`、`cardRepo.ts`、`summaryRepo.ts`（负责 Entity ↔ TypeScript 类型转换）
+- Schema 定义在 `src/ipc/config.ts` 的 `SCHEMAS` 常量中，初始化时自动检查创建
 
-### 存储适配器模式
-定义统一接口协议，支持本地/云端双模式切换：
-```typescript
-interface StorageAdapter {
-  // Project
-  listProjects(): Promise<Project[]>
-  getProject(id: string): Promise<Project | null>
-  createProject(data: Omit<Project, 'id'>): Promise<Project>
-  updateProject(id: string, data: Partial<Project>): Promise<Project>
-  deleteProject(id: string): Promise<void>
+### 关键约束
+- Forma Entity 更新为全量替换，update 方法需先 GET 再 merge 后 PUT
+- 所有字段值以字符串传递，Repo 层负责类型转换
+- 日期格式：`YYYY-MM-DD HH:mm:ss`
+- Forma 不支持服务端过滤，客户端侧筛选
+- Token 仅在主进程使用，不传递到渲染进程
 
-  // Card
-  listCards(projectId: string): Promise<Card[]>
-  createCard(data: Omit<Card, 'id'>): Promise<Card>
-  updateCard(id: string, data: Partial<Card>): Promise<Card>
-  deleteCard(id: string): Promise<void>
+### 新增字段流程
+1. 在 `src/ipc/config.ts` 的 `SCHEMAS` 中添加字段定义
+2. 更新对应 Repo 的转换函数（entityToXxx / xxxToFields）
+3. 更新 `src/renderer/types/index.ts` 前端类型
+4. **注意**：Forma Schema 创建后字段不可新增/删除，需删除 Schema 重建
 
-  // Summary
-  getSummary(projectId: string): Promise<Summary | null>
-  saveSummary(data: Summary): Promise<Summary>
-}
-```
-
-### 适配器实现
-- `LocalStorageAdapter` - 本地存储（SQLite/JSON 文件）
-- `RemoteStorageAdapter` - 远程服务端（实现相同协议的 REST API）
-
-### 云同步协议（REST API 规范）
-| 方法 | 端点 | 说明 |
-|------|------|------|
-| GET | `/api/projects` | 获取项目列表 |
-| POST | `/api/projects` | 创建项目 |
-| GET | `/api/projects/:id/cards` | 获取卡片列表 |
-| POST | `/api/cards` | 创建卡片 |
-| ... | ... | 其他 CRUD 操作 |
-
-用户自行实现此协议即可接入任意云存储后端。
+### Schema 变更限制
+Forma Schema 创建后：
+- **不可**新增/删除字段，**不可**修改字段 name 和 type
+- **可**修改字段的 `required`、`maxLength`、`minLength`、`enumValues`、`description`
+- 需要新增字段时：删除 Schema 下所有 Entity → 删除 Schema → 重建；或创建新版本 Schema（如 `card_v2`）并迁移数据
+- 修改 `src/ipc/config.ts` 中的 SCHEMAS 只影响新建 Schema，已存在的不会被更新
 
 ## LLM 集成
 

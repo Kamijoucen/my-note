@@ -1,6 +1,6 @@
 <template>
   <!-- 侧边栏 -->
-  <Sidebar v-model="sidebarCollapsed" />
+  <Sidebar v-model="sidebarCollapsed" v-model:selectedProjectId="selectedProjectId" />
 
   <!-- 主内容区：左右双栏 -->
   <NLayout position="absolute" class="main-content" :style="{ left: sidebarCollapsed ? '64px' : '240px' }">
@@ -9,7 +9,7 @@
       <template #1>
         <div class="input-panel">
           <ProjectHeader />
-          <CardInput />
+          <CardInput :project-id="selectedProjectId" @card-created="handleCardCreated" />
         </div>
       </template>
 
@@ -17,7 +17,7 @@
       <template #2>
         <div class="timeline-panel">
           <div class="timeline-scroll">
-            <CardTimeline />
+            <CardTimeline :project-id="selectedProjectId" ref="timelineRef" />
           </div>
         </div>
       </template>
@@ -30,11 +30,17 @@ import { ref } from 'vue'
 import { NLayout, NSplit } from 'naive-ui'
 
 import Sidebar from '../components/Sidebar.vue'
-
-const sidebarCollapsed = ref(false)
 import ProjectHeader from '../components/ProjectHeader.vue'
 import CardTimeline from '../components/CardTimeline.vue'
 import CardInput from '../components/CardInput.vue'
+
+const sidebarCollapsed = ref(false)
+const selectedProjectId = ref('')
+const timelineRef = ref<InstanceType<typeof CardTimeline> | null>(null)
+
+function handleCardCreated() {
+  timelineRef.value?.refresh()
+}
 </script>
 
 <style scoped>

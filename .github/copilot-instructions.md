@@ -71,17 +71,12 @@ isConfigured === true  → 导航栏 + <MainContent />
 │ NLayout (has-sider, height: 100vh)                      │
 │ ├─ Sidebar (width: 240px)                               │
 │ └─ NLayout (position: absolute, left: 240px)            │
-│     ├─ NLayoutHeader (height: 56px)                     │
-│     ├─ NLayout (position: absolute,                     │
-│     │           top: 56px, bottom: 168px)  ← 可滚动区   │
-│     │   ├─ ProjectHeader                                │
-│     │   └─ CardTimeline                                 │
-│     └─ NLayoutFooter (position: absolute,               │
-│                       height: 168px)       ← 固定底部   │
-│         └─ CardInput                                    │
+│     └─ NSplit (左右双栏)                                │
+│         ├─ 左栏：CardInput                              │
+│         └─ 右栏：CardTimeline                           │
 └─────────────────────────────────────────────────────────┘
 ```
-- 使用 Naive UI 绝对定位模式实现固定头尾、中间滚动
+- 使用 Naive UI 绝对定位模式
 - 侧边栏固定宽度 240px，可折叠
 
 ## 启动流程

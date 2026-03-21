@@ -6,7 +6,7 @@
             <p class="init-desc">输入 Forma 服务地址和认证 Token 以连接云端存储。</p>
 
             <n-space vertical :size="16" style="width: 100%;">
-                <n-input v-model:value="baseUrl" placeholder="Forma 服务地址，如 http://localhost:8888/api"
+                <n-input v-model:value="baseUrl" placeholder="Forma 服务地址，如 http://localhost:8888"
                     size="large" :disabled="initializing" />
                 <n-input v-model:value="token" type="password" show-password-on="click"
                     placeholder="认证 Token" size="large" :disabled="initializing" />

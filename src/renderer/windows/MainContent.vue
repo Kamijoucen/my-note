@@ -8,7 +8,6 @@
       <!-- 左栏：输入区 -->
       <template #1>
         <div class="input-panel">
-          <ProjectHeader />
           <CardInput :project-id="selectedProjectId" @card-created="handleCardCreated" />
         </div>
       </template>
@@ -30,7 +29,6 @@ import { ref } from 'vue'
 import { NLayout, NSplit } from 'naive-ui'
 
 import Sidebar from '../components/Sidebar.vue'
-import ProjectHeader from '../components/ProjectHeader.vue'
 import CardTimeline from '../components/CardTimeline.vue'
 import CardInput from '../components/CardInput.vue'
 

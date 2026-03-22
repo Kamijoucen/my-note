@@ -2,7 +2,7 @@
 // https://www.electronjs.org/docs/latest/tutorial/process-model#preload-scripts
 
 import { contextBridge, ipcRenderer } from 'electron';
-import type { Project, Card, Summary } from './renderer/types';
+import type { Project, Card, Summary, AnalysisDoc } from './renderer/types';
 
 contextBridge.exposeInMainWorld('electronAPI', {
     selectFile: (): Promise<string | null> => ipcRenderer.invoke('dialog:selectFile'),
@@ -17,4 +17,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
     deleteCard: (id: string): Promise<boolean> => ipcRenderer.invoke('card:delete', id),
     getSummary: (projectId: string): Promise<Summary | null> => ipcRenderer.invoke('summary:get', projectId),
     saveSummary: (data: { projectId: string; content: string; sourceCards: string[]; isArchived: boolean }): Promise<Summary> => ipcRenderer.invoke('summary:save', data),
+    getAnalysisDoc: (projectId: string, perspective: string): Promise<AnalysisDoc | null> => ipcRenderer.invoke('analysis-doc:get', projectId, perspective),
+    saveAnalysisDoc: (data: { projectId: string; perspective: string; content: string; sourceCards: string[] }): Promise<AnalysisDoc> => ipcRenderer.invoke('analysis-doc:save', data),
 });

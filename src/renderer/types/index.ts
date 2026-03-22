@@ -30,3 +30,13 @@ export interface Summary {
   sourceCards: string[]
   isArchived: boolean
 }
+
+/** 视角分析文档 */
+export interface AnalysisDoc {
+  id: string
+  projectId: string
+  perspective: string
+  content: string
+  sourceCards: string[]
+  updatedAt: Date
+}

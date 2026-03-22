@@ -2,7 +2,8 @@ import { app, BrowserWindow } from 'electron';
 import path from 'node:path';
 import started from 'electron-squirrel-startup';
 import { registerAllHandlers } from './ipc';
-import { initFormaClient } from './storage';
+import { SCHEMAS } from './ipc/config';
+import { initFormaClient, getFormaClient } from './storage';
 import { loadConfig } from './config';
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
@@ -42,6 +43,15 @@ app.on('ready', () => {
   const config = loadConfig();
   if (config) {
     initFormaClient(config.formaBaseUrl, config.formaToken);
+    // 确保所有 Schema 存在（新增 Schema 时已有用户也能自动创建）
+    const client = getFormaClient();
+    if (client) {
+      for (const schema of SCHEMAS) {
+        client.ensureSchema(schema.name, schema.description, schema.fields).catch(e => {
+          console.error(`Schema ${schema.name} 检查失败:`, e);
+        });
+      }
+    }
   }
   registerAllHandlers();
   createWindow();

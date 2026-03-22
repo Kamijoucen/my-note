@@ -8,12 +8,15 @@ import {
   NSpace,
   NTag,
   NSpin,
+  NIcon,
+  useDialog,
 } from 'naive-ui'
 import type { Card } from '../types'
 import { protocol } from '../protocol'
 
 const props = defineProps<{ projectId: string }>()
 
+const dialog = useDialog()
 const cards = ref<Card[]>([])
 const loading = ref(false)
 
@@ -44,6 +47,22 @@ function refresh() {
   loadCards()
 }
 defineExpose({ refresh })
+
+// 删除卡片
+const handleDeleteCard = (card: Card) => {
+  dialog.warning({
+    title: '删除卡片',
+    content: '确定要删除这张卡片吗？此操作不可撤销。',
+    positiveText: '删除',
+    negativeText: '取消',
+    onPositiveClick: async () => {
+      const success = await protocol.deleteCard(card.id)
+      if (success) {
+        cards.value = cards.value.filter(c => c.id !== card.id)
+      }
+    },
+  })
+}
 
 // 格式化时间
 const formatTime = (date: Date): string => {
@@ -78,6 +97,11 @@ const formatTime = (date: Date): string => {
         type="info"
       >
         <NCard size="small" hoverable class="card-item">
+          <NIcon class="card-delete" :size="14" @click.stop="handleDeleteCard(card)">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="currentColor">
+              <path d="M400 145.49L366.51 112 256 222.51 145.49 112 112 145.49 222.51 256 112 366.51 145.49 400 256 289.49 366.51 400 400 366.51 289.49 256 400 145.49z" />
+            </svg>
+          </NIcon>
           <NText class="card-content">{{ card.content }}</NText>
           <template #footer>
             <NSpace v-if="card.tags.length > 0" size="small">
@@ -105,6 +129,26 @@ const formatTime = (date: Date): string => {
 
 .card-item {
   max-width: 100%;
+  position: relative;
+}
+
+.card-delete {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  opacity: 0;
+  cursor: pointer;
+  transition: opacity 0.2s, color 0.2s;
+  color: var(--n-text-color);
+}
+
+.card-item:hover .card-delete {
+  opacity: 0.45;
+}
+
+.card-delete:hover {
+  opacity: 1 !important;
+  color: #e06c75;
 }
 
 .card-content {

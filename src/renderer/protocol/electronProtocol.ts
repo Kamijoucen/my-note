@@ -1,5 +1,5 @@
 import type { Protocol } from './types'
-import type { Project, Card, Summary } from '../types'
+import type { Project, Card, Summary, AnalysisDoc } from '../types'
 
 /**
  * Electron 环境下的 Protocol 实现
@@ -54,5 +54,13 @@ export class ElectronProtocol implements Protocol {
 
   async saveSummary(data: { projectId: string; content: string; sourceCards: string[]; isArchived: boolean }): Promise<Summary> {
     return window.electronAPI.saveSummary(data)
+  }
+
+  async getAnalysisDoc(projectId: string, perspective: string): Promise<AnalysisDoc | null> {
+    return window.electronAPI.getAnalysisDoc(projectId, perspective)
+  }
+
+  async saveAnalysisDoc(data: { projectId: string; perspective: string; content: string; sourceCards: string[] }): Promise<AnalysisDoc> {
+    return window.electronAPI.saveAnalysisDoc(data)
   }
 }

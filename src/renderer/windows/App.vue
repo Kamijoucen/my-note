@@ -10,23 +10,8 @@
                         <!-- 未配置仓库：全屏初始化页 -->
                         <InitConfig v-if="isConfigured === false" @initialized="onInitialized" />
                         <!-- 已配置：正常布局 -->
-                        <n-layout v-else-if="isConfigured === true" class="app-layout">
-                            <!-- 全局顶部导航栏 -->
-                            <n-layout-header class="global-header" bordered>
-                                <n-space justify="space-between" align="center" style="height: 100%; padding: 0 24px;">
-                                    <n-text strong style="font-size: 18px;">
-                                        📝 My Note
-                                    </n-text>
-                                    <n-space align="center">
-                                        <n-text>{{ isDark ? '🌙 暗色' : '☀️ 亮色' }}</n-text>
-                                        <n-switch :value="isDark" @update:value="toggleTheme" />
-                                    </n-space>
-                                </n-space>
-                            </n-layout-header>
-                            <!-- 下方内容区 -->
-                            <n-layout has-sider position="absolute" class="content-layout">
-                                <MainContent />
-                            </n-layout>
+                        <n-layout v-else-if="isConfigured === true" has-sider class="app-layout">
+                            <MainContent />
                         </n-layout>
                         <!-- 加载中 -->
                         <div v-else class="loading-container">
@@ -40,7 +25,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, provide, onMounted } from 'vue';
 import {
     darkTheme,
     NConfigProvider,
@@ -49,10 +34,6 @@ import {
     NDialogProvider,
     NLoadingBarProvider,
     NLayout,
-    NLayoutHeader,
-    NSpace,
-    NText,
-    NSwitch,
     NSpin
 } from 'naive-ui';
 import type { GlobalThemeOverrides } from 'naive-ui';
@@ -67,6 +48,10 @@ const isDark = ref(false);
 const toggleTheme = () => {
     isDark.value = !isDark.value;
 };
+
+// 通过 provide 向子组件注入主题状态，避免 prop drilling
+provide('isDark', isDark);
+provide('toggleTheme', toggleTheme);
 
 function onInitialized() {
     isConfigured.value = true;
@@ -192,10 +177,6 @@ body {
 <style scoped>
 .app-layout {
     height: 100vh;
-}
-
-.global-header {
-    height: 56px;
 }
 
 .content-layout {

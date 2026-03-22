@@ -1,6 +1,6 @@
 /// <reference types="vite/client" />
 
-import type { Project, Card, Summary } from './renderer/types';
+import type { Project, Card, Summary, AnalysisDoc } from './renderer/types';
 
 declare module '*.vue' {
   import type { DefineComponent } from 'vue';
@@ -25,6 +25,8 @@ export interface ElectronAPI {
   deleteCard: (id: string) => Promise<boolean>;
   getSummary: (projectId: string) => Promise<Summary | null>;
   saveSummary: (data: { projectId: string; content: string; sourceCards: string[]; isArchived: boolean }) => Promise<Summary>;
+  getAnalysisDoc: (projectId: string, perspective: string) => Promise<AnalysisDoc | null>;
+  saveAnalysisDoc: (data: { projectId: string; perspective: string; content: string; sourceCards: string[] }) => Promise<AnalysisDoc>;
 }
 
 declare global {

@@ -1,4 +1,4 @@
-import type { Project, Card, Summary } from '../types'
+import type { Project, Card, Summary, AnalysisDoc } from '../types'
 
 /**
  * Protocol 抽象层接口
@@ -19,4 +19,6 @@ export interface Protocol {
   deleteCard(id: string): Promise<boolean>
   getSummary(projectId: string): Promise<Summary | null>
   saveSummary(data: { projectId: string; content: string; sourceCards: string[]; isArchived: boolean }): Promise<Summary>
+  getAnalysisDoc(projectId: string, perspective: string): Promise<AnalysisDoc | null>
+  saveAnalysisDoc(data: { projectId: string; perspective: string; content: string; sourceCards: string[] }): Promise<AnalysisDoc>
 }

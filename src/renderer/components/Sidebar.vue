@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, inject, onMounted } from 'vue'
+import type { Ref } from 'vue'
 import {
     NLayoutSider,
     NInput,
@@ -10,6 +11,8 @@ import {
     NButton,
     NModal,
     NIcon,
+    NPopover,
+    NSwitch,
     useDialog,
 } from 'naive-ui'
 import type { Project } from '../types'
@@ -24,6 +27,10 @@ const emit = defineEmits<{ 'update:modelValue': [value: boolean]; 'update:select
 const collapsed = computed(() => props.modelValue ?? false)
 
 const dialog = useDialog()
+
+// 主题状态通过 provide/inject 从 App.vue 获取
+const isDark = inject<Ref<boolean>>('isDark', ref(false))
+const toggleTheme = inject<() => void>('toggleTheme', () => {})
 
 // 状态
 const searchValue = ref('')
@@ -150,6 +157,25 @@ const createProject = async (title: string, description: string) => {
                     </NTag>
                 </NSpace>
             </div>
+
+            <!-- 底部设置 -->
+            <div class="sidebar-settings">
+                <NDivider v-if="!collapsed" style="margin: 4px 0" />
+                <NPopover trigger="click" placement="top-start">
+                    <template #trigger>
+                        <div class="settings-trigger" :class="{ 'settings-trigger--collapsed': collapsed }">
+                            <span>⚙️</span>
+                            <span v-if="!collapsed" class="settings-label">设置</span>
+                        </div>
+                    </template>
+                    <div class="settings-popover">
+                        <div class="settings-row">
+                            <NText>♮ {{ isDark ? '暗色模式' : '亮色模式' }}</NText>
+                            <NSwitch :value="isDark" size="small" @update:value="toggleTheme" />
+                        </div>
+                    </div>
+                </NPopover>
+            </div>
         </div>
     </NLayoutSider>
 
@@ -250,5 +276,45 @@ const createProject = async (title: string, description: string) => {
 
 .sidebar-section {
     padding: 0 4px;
+}
+
+/* 底部设置 */
+.sidebar-settings {
+    margin-top: auto;
+    padding: 0 12px 8px;
+}
+
+.settings-trigger {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 13px;
+    transition: background-color 0.2s;
+}
+
+.settings-trigger:hover {
+    background-color: rgba(0, 0, 0, 0.04);
+}
+
+.settings-trigger--collapsed {
+    justify-content: center;
+}
+
+.settings-label {
+    white-space: nowrap;
+}
+
+.settings-popover {
+    min-width: 180px;
+}
+
+.settings-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 4px 0;
 }
 </style>
